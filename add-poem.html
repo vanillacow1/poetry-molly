@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add New Poem - Poetry Collection</title>
+    <style>
+      body {
+        font-family: "Crimson Text", serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #f7f3e9, #e8dcc0);
+        min-height: 100vh;
+      }
+
+      .form-container {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(44, 62, 42, 0.1);
+      }
+
+      h1 {
+        color: #4a5d3a;
+        text-align: center;
+        margin-bottom: 30px;
+        font-family: "Playfair Display", serif;
+      }
+
+      .instructions {
+        background: rgba(156, 175, 136, 0.1);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #9caf88;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #4a5d3a;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      textarea {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 2px solid #b8c5a6;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 16px;
+      }
+
+      textarea {
+        min-height: 150px;
+        resize: vertical;
+      }
+
+      .story-textarea {
+        min-height: 120px;
+      }
+
+      button {
+        background: linear-gradient(135deg, #9caf88, #4a5d3a);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(44, 62, 42, 0.2);
+      }
+
+      .secondary-btn {
+        background: #8b6f47;
+      }
+
+      .copy-btn {
+        background: #8b6f47;
+      }
+
+      .output {
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #4a5d3a;
+        text-decoration: none;
+        padding: 8px 16px;
+        border: 1px solid #9caf88;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .back-link:hover {
+        background: #9caf88;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <a href="index.html" class="back-link">← Back to Poetry Collection</a>
+
+      <h1>Add New Poem</h1>
+
+      <div class="instructions">
+        <strong>Simple Steps:</strong>
+        <ol>
+          <li>Fill out the poem details below</li>
+          <li>Click "Generate Complete poems.json"</li>
+          <li>Copy the generated code</li>
+          <li>
+            Replace all content in your poems.json file with the copied code
+          </li>
+          <li>Save and refresh your website</li>
+        </ol>
+      </div>
+
+      <form id="poemForm">
+        <label for="title">Poem Title:</label>
+        <input
+          type="text"
+          id="title"
+          required
+          placeholder="Enter the poem title"
+        />
+
+        <label for="author">Author:</label>
+        <input
+          type="text"
+          id="author"
+          required
+          placeholder="Enter the author name"
+        />
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" required />
+
+        <label for="content">Poem Content:</label>
+        <textarea
+          id="content"
+          required
+          placeholder="Enter your poem here. Press Enter for new lines."
+        ></textarea>
+
+        <label for="story">Story Behind the Poem (Optional):</label>
+        <textarea
+          id="story"
+          class="story-textarea"
+          placeholder="Tell the story behind this poem (optional)"
+        ></textarea>
+
+        <button type="button" onclick="generateCompleteJSON()">
+          Generate Complete poems.json
+        </button>
+        <button type="button" onclick="clearForm()" class="secondary-btn">
+          Clear Form
+        </button>
+      </form>
+
+      <div id="output" class="output" style="display: none">
+        <button type="button" class="copy-btn" onclick="copyToClipboard()">
+          Copy Complete poems.json
+        </button>
+        <div id="jsonOutput"></div>
+      </div>
+    </div>
+
+    <script>
+      // Set today's date as default
+      document.getElementById("date").value = new Date()
+        .toISOString()
+        .split("T")[0];
+
+      async function generateCompleteJSON() {
+        const title = document.getElementById("title").value.trim();
+        const author = document.getElementById("author").value.trim();
+        const date = document.getElementById("date").value;
+        const content = document.getElementById("content").value.trim();
+        const story = document.getElementById("story").value.trim();
+
+        if (!title || !author || !date || !content) {
+          alert(
+            "Please fill in all required fields (title, author, date, and content)"
+          );
+          return;
+        }
+
+        // Try to load existing poems from the same directory
+        let existingPoems = [];
+        try {
+          const response = await fetch("poems.json");
+          if (response.ok) {
+            existingPoems = await response.json();
+            console.log("Loaded existing poems:", existingPoems.length);
+          } else {
+            console.log("No existing poems.json found, starting fresh");
+          }
+        } catch (error) {
+          console.log(
+            "Could not load existing poems, starting fresh:",
+            error.message
+          );
+        }
+
+        // Create new poem object
+        const newPoem = {
+          title: title,
+          author: author,
+          content: content.replace(/\n/g, "\\n"),
+          date: date,
+        };
+
+        // Only add story if it exists
+        if (story && story.trim()) {
+          newPoem.story = story.replace(/\n/g, "\\n");
+        }
+
+        // Add new poem to existing poems
+        const allPoems = [...existingPoems, newPoem];
+
+        // Generate complete JSON with proper formatting
+        const completeJSON = JSON.stringify(allPoems, null, 2);
+
+        document.getElementById("jsonOutput").textContent = completeJSON;
+        document.getElementById("output").style.display = "block";
+
+        // Scroll to output
+        document
+          .getElementById("output")
+          .scrollIntoView({ behavior: "smooth" });
+      }
+
+      function clearForm() {
+        document.getElementById("poemForm").reset();
+        document.getElementById("date").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        document.getElementById("output").style.display = "none";
+      }
+
+      function copyToClipboard() {
+        const jsonText = document.getElementById("jsonOutput").textContent;
+        navigator.clipboard
+          .writeText(jsonText)
+          .then(() => {
+            const btn = document.querySelector(".copy-btn");
+            const originalText = btn.textContent;
+            btn.textContent = "Copied!";
+            btn.style.background = "#2e7d32";
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.style.background = "#8b6f47";
+            }, 2000);
+          })
+          .catch((err) => {
+            alert(
+              "Could not copy to clipboard. Please select and copy the text manually."
+            );
+          });
+      }
+    </script>
+  </body>
+</html>
